@@ -6,7 +6,7 @@ import QtQuick.Layouts
 PanelWindow {
     id: root
     visible: true
-    width: 260
+    width: 300
     height: mainCol.implicitHeight + 44
 
     WlrLayershell.layer: WlrLayer.Bottom
