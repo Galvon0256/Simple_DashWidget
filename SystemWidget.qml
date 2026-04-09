@@ -16,9 +16,8 @@ ColumnLayout {
         font.letterSpacing: 1
     }
 
-    RowLayout {
+    Row {
         Layout.fillWidth: true
-        spacing: 0
 
         Repeater {
             model: [
@@ -27,61 +26,53 @@ ColumnLayout {
                 { label: "Disk", value: diskPercent, color: "#9ece6a" }
             ]
 
-            delegate: ColumnLayout {
-                Layout.fillWidth: true
+            delegate: Column {
+                width: parent.width / 3
                 spacing: 6
 
-                Item {
-                    Layout.alignment: Qt.AlignHCenter
+                Canvas {
+                    anchors.horizontalCenter: parent.horizontalCenter
                     width: 64
                     height: 64
+                    property real progress: modelData.value / 100.0
 
-                    Canvas {
-                        anchors.fill: parent
-                        property real progress: modelData.value / 100.0
-                        property color ringColor: modelData.color
+                    onProgressChanged: requestPaint()
 
-                        onProgressChanged: requestPaint()
+                    onPaint: {
+                        var ctx = getContext("2d")
+                        ctx.clearRect(0, 0, width, height)
+                        var cx = width / 2
+                        var cy = height / 2
+                        var r = 26
+                        var start = -Math.PI / 2
+                        var end = start + (2 * Math.PI * progress)
 
-                        onPaint: {
-                            var ctx = getContext("2d")
-                            ctx.clearRect(0, 0, width, height)
-                            var cx = width / 2
-                            var cy = height / 2
-                            var r = 26
-                            var start = -Math.PI / 2
-                            var end = start + (2 * Math.PI * progress)
+                        ctx.beginPath()
+                        ctx.arc(cx, cy, r, 0, 2 * Math.PI)
+                        ctx.strokeStyle = Qt.rgba(0.66, 0.69, 0.84, 0.1)
+                        ctx.lineWidth = 5
+                        ctx.lineCap = "round"
+                        ctx.stroke()
 
-                            // Background ring
+                        if (progress > 0) {
                             ctx.beginPath()
-                            ctx.arc(cx, cy, r, 0, 2 * Math.PI)
-                            ctx.strokeStyle = Qt.rgba(0.66, 0.69, 0.84, 0.1)
+                            ctx.arc(cx, cy, r, start, end)
+                            ctx.strokeStyle = modelData.color
                             ctx.lineWidth = 5
                             ctx.lineCap = "round"
                             ctx.stroke()
-
-                            // Progress ring
-                            if (progress > 0) {
-                                ctx.beginPath()
-                                ctx.arc(cx, cy, r, start, end)
-                                ctx.strokeStyle = modelData.color
-                                ctx.lineWidth = 5
-                                ctx.lineCap = "round"
-                                ctx.stroke()
-                            }
-
-                            // Center text
-                            ctx.fillStyle = "#c0c8f0"
-                            ctx.font = "500 13px sans-serif"
-                            ctx.textAlign = "center"
-                            ctx.textBaseline = "middle"
-                            ctx.fillText(modelData.value + "%", cx, cy)
                         }
+
+                        ctx.fillStyle = "#c0c8f0"
+                        ctx.font = "500 13px sans-serif"
+                        ctx.textAlign = "center"
+                        ctx.textBaseline = "middle"
+                        ctx.fillText(modelData.value + "%", cx, cy)
                     }
                 }
 
                 Text {
-                    Layout.alignment: Qt.AlignHCenter
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: modelData.label
                     font.pixelSize: 11
                     color: "#6b7399"
@@ -90,7 +81,6 @@ ColumnLayout {
         }
     }
 
-    // CPU via /proc/stat
     property var lastIdle: 0
     property var lastTotal: 0
 
@@ -114,7 +104,6 @@ ColumnLayout {
         }
     }
 
-    // RAM via /proc/meminfo
     Process {
         id: ramProc
         command: ["bash", "-c", "awk '/MemTotal|MemAvailable/{print $2}' /proc/meminfo"]
@@ -131,7 +120,6 @@ ColumnLayout {
         }
     }
 
-    // Disk usage for /
     Process {
         id: diskProc
         command: ["bash", "-c", "df / | awk 'NR==2{print $5}' | tr -d '%'"]
